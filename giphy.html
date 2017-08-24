@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>giphy</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <h1 class="title">Giphy API Search</h1>
+    <div class="input-wrapper empty">
+        <input type="text" class="query" />
+        <input id="addGif" type="submit" Value="Submit">
+        <div class="loader"></div>
+    </div>
+    <div class="result">
+    </div>
+    <script type="text/javascript">
+    debugger
+    const PUBLIC_KEY = 'dc6zaTOxFJmzC';
+    const BASE_URL = 'https://api.giphy.com/v1/gifs/';
+    const ENDPOINT = 'search';
+    const LIMIT = 8;
+    const RATING = 'pg-13 ';
+
+    let $queryInput = $('.query');
+    let $resultWrapper = $('.result');
+    let $loader = $('.loader');
+    let $inputWrapper = $('.input-wrapper');
+    let $button = $('.submit');
+    let currentTimeout;
+
+    let query = {
+        text: null,
+        offset: 0,
+        request() {
+            return `${BASE_URL}${ENDPOINT}?q=${this.text}&limit=${LIMIT}&rating=${RATING}&offset=${this.offset}&api_key=${PUBLIC_KEY}`;
+        },
+        fetch(callback) {
+            $.getJSON(this.request())
+                .done(data => {
+                    let results = data.data;
+
+                    if (results.length) {
+                        let url = results[0].images.downsized.url;
+                        console.log(results);
+                        callback(url);
+                    } else {
+                        callback('');
+                    }
+                })
+                .fail(error => {
+                    console.log(error);
+                });
+        }
+    }
+
+    function buildImg(src = '//giphy.com/embed/xv3WUrBxWkUPC', classes = 'gif hidden') {
+        return `<img src="${src}" class="${classes}" alt="gif" />`;
+    }
+
+   
+
+    $button.on('click', e => {
+        query.offset = Math.floor(Math.random() * 25);
+
+        query.fetch(url => {
+            if (url.length) {
+                $resultWrapper.append(buildImg(url));
+
+                $button.addClass('active');
+            } else {
+                $resultWrapper.append(`<p class="no-results hidden">No Results found for <strong>${query.text}</strong></p>`);
+
+                $button.removeClass('active');
+            }
+
+            $loader.addClass('done');
+            currentTimeout = setTimeout(() => {
+                $('.hidden').toggleClass('hidden');
+            }, 1000);
+        });
+    });
+
+    $queryInput.on('keyup', e => {
+        let key = e.which || e.keyCode;
+        query.text = $queryInput.val();
+        query.offset = Math.floor(Math.random() * 25);
+
+        if (currentTimeout) {
+            clearTimeout(currentTimeout);
+            $loader.removeClass('done');
+        }
+
+        currentTimeout = setTimeout(() => {
+            currentTimeout = null;
+            $('.gif').addClass('hidden');
+
+            if (query.text && query.text.length) {
+                $inputWrapper.addClass('active').removeClass('empty');
+
+                query.fetch(url => {
+                    if (url.length) {
+                        $resultWrapper.append(buildImg(url));
+
+                        $button.addClass('active');
+                    } else {
+                        $resultWrapper.append(`<p class="no-results hidden">No Results found for <strong>${query.text}</strong></p>`);
+
+                        $button.removeClass('active');
+                    }
+
+                    $loader.addClass('done');
+                    currentTimeout = setTimeout(() => {
+                        $('.hidden').toggleClass('hidden');
+                    }, 1000);
+                });
+            } else {
+                $inputWrapper.removeClass('active').addClass('empty');
+                $button.removeClass('active');
+            }
+        }, 1000);
+    });
+    </script>
+</body>
+
+</html>
